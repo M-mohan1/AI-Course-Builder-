@@ -14,5 +14,8 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Screenshot
-[paste your screenshot here]
+## App Screenshot
+
+![Home Screen](assets/Home.png)
+![HITL Screen](assets/HITL.png)
+![Output Screen](assets/Output.png)
