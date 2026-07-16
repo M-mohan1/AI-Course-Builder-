@@ -95,25 +95,51 @@ if st.session_state.syllabus_ready:
         return final_state
 
     # Action buttons for the user validation layer
-    c1, c2 = st.columns([1, 5])
-    with c1:
-        if st.button("✅ Approve & Draft Content", type="primary"):
-            with st.spinner("⚡ Spawning dynamic parallel branch nodes in background thread layer..."):
-                start_time = time.time()
-                final_output = run_parallel_generation(st.session_state.initial_context, st.session_state.chapters)
-                end_time = time.time()
-                
-                st.success(f"🎉 Pipeline run completed in {end_time - start_time:.2f} seconds!")
-                
-                # --- 3. DYNAMIC CONTENT RENDERING OUTPUT ---
-                st.subheader("📚 Generated Textbook Drafts")
-                for key, val in final_output.items():
-                    if key.startswith("content_"):
-                        with st.expander(f"📖 Read: {key.replace('content_', '').replace('_', ' ')}"):
-                            st.markdown(val)
-    with c2:
-        if st.button("❌ Cancel Process"):
-            st.session_state.syllabus_ready = False
-            st.session_state.chapters = []
-            st.session_state.initial_context = {}
-            st.rerun()
+
+st.markdown("### 💬 Want to modify the outline before drafting?")
+user_feedback = st.text_area(
+    "Suggest changes (optional):",
+    placeholder="e.g., Remove chapter 3, add a chapter on heap sort, make it more beginner friendly..."
+)
+
+c1, c2, c3 = st.columns([2, 2, 5])
+
+with c1:
+    if st.button("✅ Approve & Draft Content", type="primary"):
+        with st.spinner("⚡ Spawning parallel branch nodes..."):
+            start_time = time.time()
+            final_output = run_parallel_generation(
+                st.session_state.initial_context, 
+                st.session_state.chapters
+            )
+            end_time = time.time()
+            st.success(f"🎉 Pipeline completed in {end_time - start_time:.2f} seconds!")
+            st.subheader("📚 Generated Textbook Drafts")
+            for key, val in final_output.items():
+                if key.startswith("content_"):
+                    with st.expander(f"📖 {key.replace('content_', '').replace('_', ' ')}"):
+                        st.markdown(val)
+
+with c2:
+    if st.button("🔄 Suggest Changes"):
+        if not user_feedback.strip():
+            st.warning("Please type your suggestions in the box above first!")
+        else:
+            with st.spinner("🤖 Re-generating syllabus with your feedback..."):
+                try:
+                    revised_topic = f"{st.session_state.initial_context['topic']}. User feedback: {user_feedback}"
+                    revised_state = run_async_syllabus(revised_topic)
+                    st.session_state.initial_context = {"topic": st.session_state.initial_context['topic']}
+                    st.session_state.initial_context.update(revised_state)
+                    st.session_state.chapters = revised_state.get("chapters_to_write", [])
+                    st.session_state.syllabus_ready = True
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to revise syllabus: {e}")
+
+with c3:
+    if st.button("❌ Cancel Process"):
+        st.session_state.syllabus_ready = False
+        st.session_state.chapters = []
+        st.session_state.initial_context = {}
+        st.rerun()

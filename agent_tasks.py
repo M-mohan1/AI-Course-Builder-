@@ -1,13 +1,16 @@
 import os
 import asyncio
 import json
-from google import genai
 from google.genai import types
 from google.genai.errors import ServerError
 from schema import CourseSyllabus
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-client = genai.Client()
+from dotenv import load_dotenv
+from google import genai
+import os
+load_dotenv()
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 @retry(
     stop=stop_after_attempt(5),
