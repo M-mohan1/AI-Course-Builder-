@@ -63,17 +63,23 @@ async def syllabus_generator_agent(shared_state: dict) -> dict:
 
 # 2. Add the Async Chapter Writer Agent task
 async def chapter_writer_agent(shared_state: dict) -> dict:
-    """Simulates or calls Gemini to concurrently generate full text markdown for a chapter."""
     chapter_info = shared_state.get("current_processing_node", {})
     title = chapter_info.get("title", "Unknown Chapter")
     summary = chapter_info.get("summary", "")
-    
-    print(f"✍️ [Writer Agent] Deep-diving into parallel generation for: {title}...")
-    
-    # Simulate a network generation delay for the chapter text
-    await asyncio.sleep(2.5) 
-    
-    # Return the generated content mapped to a unique key in global state
+
+    prompt = f"""Write a detailed technical chapter titled '{title}'.
+Brief overview: {summary}
+Write in markdown with clear sections, code examples where relevant, and practical explanations."""
+
+    loop = asyncio.get_running_loop()
+    response = await loop.run_in_executor(
+        None,
+        lambda: client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+    )
+
     return {
-        f"content_{title.replace(' ', '_')}": f"# {title}\n\n{summary}\n\n[Full Deep Dive technical content generated here...]"
+        f"content_{title.replace(' ', '_')}": response.text
     }
